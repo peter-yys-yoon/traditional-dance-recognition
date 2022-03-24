@@ -10,6 +10,8 @@ import torch.utils.data.distributed
 import torchvision.transforms as transforms
 from tqdm import tqdm
 
+import cv2
+
 from models import build_model
 from utils.utils import build_dataflow, AverageMeter, accuracy
 from utils.video_transforms import *
@@ -47,6 +49,20 @@ def main():
     args = parser.parse_args()
     cudnn.benchmark = True
     num_classes, train_list_name, val_list_name, test_list_name, filename_seperator, image_tmpl, filter_video, label_file = get_dataset_config(args.dataset)
+
+    listpath = '/home/peter/workspace/dataset/kor_dance/kordance600_13/val.txt'
+    listpath2 = '/home/peter/workspace/dataset/kor_dance/kordance600_13/_val.txt'
+    with open( listpath, 'r') as f:
+        for ss in f.readlines():
+            raw = ss.rstrip().split()[0]
+            raw = raw.split('/')[1]
+
+            if raw == args.video:
+                with open(listpath2, 'w') as ff:
+                    ff.write(ss.rstrip())
+                break
+    val_list_name = '_val.txt'
+
 
     data_list_name = val_list_name if args.evaluate else test_list_name
 
@@ -122,7 +138,7 @@ def main():
 
     # Data loading code
     data_list = os.path.join(args.datadir, data_list_name)
-    print('datalist ', data_list)
+    print('data List is :', data_list)
     sample_offsets = list(range(-args.num_clips // 2 + 1, args.num_clips // 2 + 1))
     print("Image is scaled to {} and crop {}".format(scale_size, args.input_size))
     print("Number of crops: {}".format(args.num_crops))
@@ -159,12 +175,15 @@ def main():
     total_batches = len(data_loader)
 
     labels = []
-    with torch.no_grad(), tqdm(total=total_batches) as t_bar:
+    with torch.no_grad():
         end = time.time()
         for i, (video, label) in enumerate(data_loader):
             labels += list(label)
+            print('Preparing a video')
             output = eval_a_batch(video, model, num_clips=args.num_clips, num_crops=args.num_crops,
                                   threed_data=args.threed_data)
+            print('Do evaluation')
+            
             if args.evaluate:
                 label = label.cuda(non_blocking=True)
                 # measure accuracy
@@ -188,14 +207,32 @@ def main():
             total_outputs += video.shape[0]
             batch_time.update(time.time() - end)
             end = time.time()
-            t_bar.update(1)
+
 
         outputs = outputs[:total_outputs]
+        m = nn.Softmax(dim=1)
+        np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
+
         print("Predict {} videos.".format(total_outputs), flush=True)
-        np.save(os.path.join(log_folder, '{}_{}crops_{}clips_{}_details.npy'.format(
-            "val" if args.evaluate else "test", args.num_crops,
-            args.num_clips, args.input_size)), outputs)
-        np.save(os.path.join(log_folder,'labels.npy'), labels)
+        print('Video name:', args.video)
+        # ss = outputs.data.cpu().numpy()
+        res = m(torch.from_numpy(output))
+        res = res.data.cpu().numpy()[0]
+
+        indices = np.argsort(res)
+        indices = indices[::-1]
+
+        for i in indices[:5]:
+            print( f'{res[i]:.3f}' )
+        
+        # res.sort()
+        # res = res[::-1]
+        # print(res)
+
+        # np.save(os.path.join(log_folder, '{}_{}crops_{}clips_{}_details.npy'.format(
+        #     "val" if args.evaluate else "test", args.num_crops,
+        #     args.num_clips, args.input_size)), outputs)
+        # np.save(os.path.join(log_folder,'labels.npy'), labels)
 
 
     if args.evaluate:
@@ -211,8 +248,8 @@ def main():
         top5_avg_str = f'{top1.avg:.4f}'
 
         msg = strFormat.format(args.input_size, scale_size, args.num_crops, args.num_clips, ckpt_name, top1_avg_str, top5_avg_str)
-        print(msg, flush=True, file=logfile)
-        print(msg, flush=True)
+        # print(msg, flush=True, file=logfile)
+        # print(msg, flush=True)
         # print('Val@{}({}) (# crops = {}, # clips = {}): \tTop@1: {:.4f}\tTop@5: {:.4f}'.format(
         #     args.input_size, scale_size, args.num_crops, args.num_clips, top1.avg, top5.avg),
         #     flush=True)

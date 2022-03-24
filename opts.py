@@ -108,6 +108,9 @@ def arg_parser():
     parser.add_argument('--num_clips', default=1, type=int,
                         help='[Test.py only] number of clips.')
 
+    parser.add_argument('--video', default='', type=str, help='video name')
+
+
     # for distributed learning, not supported yet
     parser.add_argument('--sync-bn', action='store_true',
                         help='sync BN across GPUs')
