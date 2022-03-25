@@ -122,7 +122,6 @@ def main():
 
     # Data loading code
     data_list = os.path.join(args.datadir, data_list_name)
-    print('datalist ', data_list)
     sample_offsets = list(range(-args.num_clips // 2 + 1, args.num_clips // 2 + 1))
     print("Image is scaled to {} and crop {}".format(scale_size, args.input_size))
     print("Number of crops: {}".format(args.num_crops))

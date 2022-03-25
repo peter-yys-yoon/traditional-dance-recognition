@@ -138,7 +138,6 @@ def main():
 
     # Data loading code
     data_list = os.path.join(args.datadir, data_list_name)
-    print('data List is :', data_list)
     sample_offsets = list(range(-args.num_clips // 2 + 1, args.num_clips // 2 + 1))
     print("Image is scaled to {} and crop {}".format(scale_size, args.input_size))
     print("Number of crops: {}".format(args.num_crops))
@@ -221,42 +220,16 @@ def main():
 
         indices = np.argsort(res)
         indices = indices[::-1]
+        label_kor = ['손바닥모둠사위','몸굽힘사위','발건넘사위','무릎꿇어앉어사위','발디딤사위','여닫이사위',
+        '어름사위','팔뻗음사위','발돋움사위','발받침사위','무릎굽힘,무릎폄사위','발모둠,발벌림사위','인사위']
 
         for i in indices[:5]:
-            print( f'{res[i]:.3f}' )
+            print( f'{(res[i]*100):.1f}%', label_kor[i])
+
+
+
+    
         
-        # res.sort()
-        # res = res[::-1]
-        # print(res)
-
-        # np.save(os.path.join(log_folder, '{}_{}crops_{}clips_{}_details.npy'.format(
-        #     "val" if args.evaluate else "test", args.num_crops,
-        #     args.num_clips, args.input_size)), outputs)
-        # np.save(os.path.join(log_folder,'labels.npy'), labels)
-
-
-    if args.evaluate:
-        strFormat = '{:^7}|{:^7}|{:^7}|{:^7}|{:^16s}|{:^9}|{:^9}'
-        if not file_exist_flag:
-            print(strFormat.format('Input', 'Scale', 'crops','clips', 'Weight' ,'top1', 'top5'), file=logfile)
-            print('-'*68,file=logfile)
-    
-    
-        ckpt_name =os.path.basename(args.pretrained)
-        ckpt_name = ckpt_name.split('.')[0].split('_')[1]
-        top1_avg_str = f'{top1.avg:.4f}'
-        top5_avg_str = f'{top1.avg:.4f}'
-
-        msg = strFormat.format(args.input_size, scale_size, args.num_crops, args.num_clips, ckpt_name, top1_avg_str, top5_avg_str)
-        # print(msg, flush=True, file=logfile)
-        # print(msg, flush=True)
-        # print('Val@{}({}) (# crops = {}, # clips = {}): \tTop@1: {:.4f}\tTop@5: {:.4f}'.format(
-        #     args.input_size, scale_size, args.num_crops, args.num_clips, top1.avg, top5.avg),
-        #     flush=True)
-        # print('Val@{}({}) (# crops = {}, # clips = {}): \tTop@1: {:.4f}\tTop@5: {:.4f}'.format(
-        #     args.input_size, scale_size, args.num_crops, args.num_clips, top1.avg, top5.avg),
-        #     flush=True, file=logfile)
-
     logfile.close()
 
 
